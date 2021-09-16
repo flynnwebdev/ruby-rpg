@@ -13,33 +13,15 @@ module Combat
   end
 
   def battle(opponent)
-    if !opponent.instance_of? Combat
-      puts "#{opponent.name} cannot be attacked!"
-      return
-    end
-    puts "#{name} engaged #{opponent.name} in a battle to the death!"
+    a = self
+    b = opponent
+    a,b = b,a if rand > 0.5
     while !dead? && !opponent.dead?
-      # Opponents attack simultaneously during each round
-      sleep 2
-      damage(opponent)
-      opponent.damage(self)
-      puts "HEALTH --> #{name}: #{health}\t#{opponent.name}: #{opponent.health}"
-    end
-    if dead? && opponent.dead?
-      puts "#{name} and #{opponent.name} killed each other !!"
-    else
-      puts "#{dead? ? name : opponent.name} was killed by #{dead? ? opponent.name : name} !!"
-    end
-  end
-
-  def damage(opponent)
-    dmg = (attack + rand(1..6)) - (opponent.defence + rand(1..6))
-    print "#{name} attacks #{opponent.name} "
-    if dmg > 0
-      puts "for #{dmg} damage!"
-      opponent.health = [opponent.health - dmg, 0].max
-    else
-      puts "and misses!"
+      sleep 1
+      dmg = (a.attack + rand(1..6)) - (b.defence + rand(1..6))
+      b.health = [b.health - dmg, 0].max
+      yield(a, b, dmg)
+      a,b = b,a
     end
   end
 end
@@ -50,10 +32,6 @@ class Character
   def initialize(name, race)
     @name = name
     @race = race
-  end
-
-  def battle(opponent)
-    puts "#{name} cannot engage in battle!"
   end
 end
 
@@ -89,6 +67,16 @@ conan = Warrior.new('Conan', 'Human')
 galadriel = Mage.new('Galadriel', 'Elf')
 grok = Vendor.new('Grok', 'Ogre')
 
-# conan.battle(galadriel)
-galadriel.battle(grok)
-# grok.battle(galadriel)
+def start_battle(a, b)
+  a.battle(b) do |attacker, defender, damage|
+    puts "#{attacker.name} attacks #{defender.name} #{damage > 0 ? "for #{damage} damage!" : "and misses!"}"
+    puts "HEALTH --> #{a.name}: #{a.health}\t#{b.name}: #{b.health}"
+  end
+  if a.dead? && b.dead?
+    puts "#{a.name} and #{b.name} killed each other !!"
+  else
+    puts "#{a.dead? ? a.name : b.name} was killed by #{a.dead? ? b.name : a.name} !!"
+  end
+end
+
+start_battle(conan, galadriel)
